@@ -9,29 +9,35 @@ app = FastAPI()
 
 @app.post("/ocr")
 async def ocr_image(file: UploadFile = File(...)):
-    image_data = await file.read()
-    image = Image.open(io.BytesIO(image_data))
-    text = pytesseract.image_to_string(image)
-    return JSONResponse(content={"text": text})
+    try:
+        image_data = await file.read()
+        image = Image.open(io.BytesIO(image_data))
+        text = pytesseract.image_to_string(image)
+        return JSONResponse(content={"text": text})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/ocr-to-excel")
 async def ocr_to_excel(file: UploadFile = File(...)):
-    image_data = await file.read()
-    image = Image.open(io.BytesIO(image_data))
-    text = pytesseract.image_to_string(image)
+    try:
+        image_data = await file.read()
+        image = Image.open(io.BytesIO(image_data))
+        text = pytesseract.image_to_string(image)
 
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "OCR Result"
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "OCR Result"
 
-    for i, line in enumerate(text.splitlines(), start=1):
-        ws.cell(row=i, column=1, value=line)
+        for i, line in enumerate(text.splitlines(), start=1):
+            ws.cell(row=i, column=1, value=line)
 
-    excel_filename = "ocr_result.xlsx"
-    wb.save(excel_filename)
+        excel_filename = "ocr_result.xlsx"
+        wb.save(excel_filename)
 
-    return FileResponse(
-        excel_filename,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        filename=excel_filename
-    )
+        return FileResponse(
+            excel_filename,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            filename=excel_filename
+        )
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
